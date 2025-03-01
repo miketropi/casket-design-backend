@@ -52,3 +52,40 @@ function cbd_get_casket_settings() {
     'media_picker_default' => get_field('media_picker_default', 'option'),
   ];
 }
+
+function cbd_save_json_to_file() {
+  $json_data = $data = json_decode(file_get_contents('php://input'), true);
+  if ($json_data === false) {
+    return new WP_Error('json_encode_failed', 'Failed to encode JSON data');
+  }
+  $filename = uniqid('casket_design_') . '_' . time() . '_' . rand(1000, 9999) . '.json';
+
+  // Get WordPress upload directory
+  $upload_dir = wp_upload_dir();
+  
+  // Ensure filename has .json extension
+  if (!str_ends_with($filename, '.json')) {
+    $filename .= '.json';
+  }
+
+  // Create full file path
+  $file_path = $upload_dir['basedir'] . '/' . $filename;
+
+  // Encode data to JSON if not already a string
+  if (!is_string($json_data)) {
+    $json_data = json_encode($json_data);
+  }
+
+  // Write JSON to file
+  $result = file_put_contents($file_path, $json_data);
+
+  if ($result === false) {
+    return new WP_Error('json_save_failed', 'Failed to save JSON file');
+  }
+
+  return [
+    'path' => $file_path,
+    'url' => $upload_dir['baseurl'] . '/' . $filename,
+    'size' => round($result / (1024 * 1024), 2) . ' MB'
+  ];
+}

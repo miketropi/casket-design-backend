@@ -18,3 +18,10 @@ add_action('rest_api_init', function () {
     // 'permission_callback' => 'cbd_validate_upload_permissions',
   ]);
 });
+
+add_action('rest_api_init', function () {
+  register_rest_route('custom/v1', '/casket-save-json', [
+    'methods' => 'POST',
+    'callback' => 'cbd_save_json_to_file',
+  ]);
+});
