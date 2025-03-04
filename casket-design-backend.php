@@ -31,4 +31,5 @@
   require_once( CDB_DIR . '/inc/helpers.php' );
   require_once( CDB_DIR . '/inc/api.php' );
   require_once( CDB_DIR . '/inc/hooks.php' );
+  require_once( CDB_DIR . '/inc/admin.php' );
 }
