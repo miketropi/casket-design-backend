@@ -19,3 +19,8 @@ add_action( 'init', function() {
   fpassthru($fp);
   exit;
 } ); 
+
+// Hook the notification function to the casket design creation action
+add_action('cbd_create_casket_design_post', 'cbd_send_admin_notification_for_new_design');
+// Hook the customer notification function to the casket design creation action
+add_action('cbd_create_casket_design_post', 'cbd_send_customer_notification_for_new_design');

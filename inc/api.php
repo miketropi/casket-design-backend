@@ -39,3 +39,13 @@ add_action('rest_api_init', function () {
     'callback' => 'cbd_create_casket_design_post',
   ]);
 });
+
+add_action('rest_api_init', function () {
+  register_rest_route('custom/v1', '/casket-design/(?P<id>\d+)', [
+    'methods' => 'GET',
+    'callback' => function($request) {
+      $design_id = $request->get_param('id');
+      return cbd_get_casket_design_by_id($design_id);
+    },
+  ]);
+});

@@ -202,9 +202,138 @@ function cbd_create_casket_design_post() {
   // casket_images
   update_post_meta($post_id, '_casket_images', $json_data['casket_images']);
 
+  do_action('cbd_create_casket_design_post', $post_id);
+
   return [
     'success' => true,
     'post_id' => $post_id,
     'message' => 'Casket design post created successfully',
   ]; 
+}
+
+/**
+ * Get casket design by ID
+ * 
+ * @param int $design_id The ID of the casket design post
+ * @return array|WP_Error The casket design data or error
+ */
+function cbd_get_casket_design_by_id($design_id) {
+  $post = get_post($design_id);
+  
+  if (!$post || $post->post_type !== 'casket_editor') {
+    return new WP_Error('invalid_design', 'Invalid casket design ID or design not found');
+  }
+  
+  $_casket_design_data = get_post_meta($post->ID, '_casket_design_data', true);
+  $json_data = json_decode(file_get_contents($_casket_design_data));
+
+  $design_data = [
+    'post_id' => $post->ID,
+    'post_title' => $post->post_title,
+    'post_content' => $post->post_content,
+    'casket_firstname' => get_post_meta($post->ID, '_casket_firstname', true),
+    'casket_lastname' => get_post_meta($post->ID, '_casket_lastname', true),
+    'casket_email' => get_post_meta($post->ID, '_casket_email', true),
+    'casket_design_data' => $json_data,
+    'casket_lib' => get_post_meta($post->ID, '_casket_lib', true),
+    'casket_right' => get_post_meta($post->ID, '_casket_right', true),
+    'casket_left' => get_post_meta($post->ID, '_casket_left', true),
+    'casket_bottom' => get_post_meta($post->ID, '_casket_bottom', true),
+    'casket_top' => get_post_meta($post->ID, '_casket_top', true),
+    'casket_images' => get_post_meta($post->ID, '_casket_images', true),
+  ];
+  
+  return $design_data;
+}
+
+/**
+ * Send email notification to admin when a new casket design is created
+ * 
+ * @param int $post_id The ID of the newly created casket design post
+ * @return bool Whether the email was sent successfully
+ */
+function cbd_send_admin_notification_for_new_design($post_id) {
+  $post = get_post($post_id);
+  
+  if (!$post || $post->post_type !== 'casket_editor') {
+    return false;
+  }
+  
+  $admin_email = get_option('admin_email');
+  $site_name = get_bloginfo('name');
+  
+  $firstname = get_post_meta($post_id, '_casket_firstname', true);
+  $lastname = get_post_meta($post_id, '_casket_lastname', true);
+  $customer_email = get_post_meta($post_id, '_casket_email', true);
+  
+  $subject = sprintf('[%s] New Casket Design Created', $site_name);
+  
+  $message = sprintf(
+    "A new casket design has been created on your website.\n\n" .
+    "Design Details:\n" .
+    "- Design ID: %d\n" .
+    "- Design Title: %s\n" .
+    "- Customer Name: %s %s\n" .
+    "- Customer Email: %s\n\n" .
+    "You can view the full design at: %s",
+    $post_id,
+    $post->post_title,
+    $firstname,
+    $lastname,
+    $customer_email,
+    admin_url('post.php?post=' . $post_id . '&action=edit')
+  );
+  
+  $headers = array('Content-Type: text/plain; charset=UTF-8');
+  
+  return wp_mail($admin_email, $subject, $message, $headers);
+}
+
+/**
+ * Send email notification to customer when they submit a new casket design
+ * 
+ * @param int $post_id The ID of the newly created casket design post
+ * @return bool Whether the email was sent successfully
+ */
+function cbd_send_customer_notification_for_new_design($post_id) {
+  $post = get_post($post_id);
+  
+  if (!$post || $post->post_type !== 'casket_editor') {
+    return false;
+  }
+  
+  $site_name = get_bloginfo('name');
+  
+  $firstname = get_post_meta($post_id, '_casket_firstname', true);
+  $lastname = get_post_meta($post_id, '_casket_lastname', true);
+  $customer_email = get_post_meta($post_id, '_casket_email', true);
+  
+  if (empty($customer_email)) {
+    return false;
+  }
+  
+  $subject = sprintf('Your Casket Design Submission - %s', $site_name);
+  
+  $message = sprintf(
+    "Dear %s %s,\n\n" .
+    "Thank you for submitting your casket design with %s.\n\n" .
+    "Your design has been received and is being processed. Your design reference number is: %d\n\n" .
+    "Design Details:\n" .
+    "- Design Title: %s\n" .
+    "- Submission Date: %s\n\n" .
+    "If you have any questions about your design, please contact us.\n\n" .
+    "Thank you,\n" .
+    "%s Team",
+    $firstname,
+    $lastname,
+    $site_name,
+    $post_id,
+    $post->post_title,
+    date_i18n(get_option('date_format'), strtotime($post->post_date)),
+    $site_name
+  );
+  
+  $headers = array('Content-Type: text/plain; charset=UTF-8');
+  
+  return wp_mail($customer_email, $subject, $message, $headers);
 }
